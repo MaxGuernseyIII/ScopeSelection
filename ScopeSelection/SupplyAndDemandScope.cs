@@ -73,6 +73,9 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
   /// </summary>
   public sealed class Space : ScopeSpace<SupplyAndDemandScope<T>>
   {
+    /// <summary>
+    /// Constructs a new, distinct space.
+    /// </summary>
     public Space()
     {
       Unspecified = new(this, Always, Never);

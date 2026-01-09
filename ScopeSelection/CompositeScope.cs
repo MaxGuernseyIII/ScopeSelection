@@ -45,10 +45,15 @@ namespace ScopeSelection;
 /// <param name="Right">The second dimension in the tuple.</param>
 /// <typeparam name="TLeft">The type of the first dimension in the tuple.</typeparam>
 /// <typeparam name="TRight">The ype of the second dimension in the tuple.</typeparam>
-public sealed class CompositeScope<TLeft, TRight>(TLeft Left, TRight Right) : Scope<CompositeScope<TLeft, TRight>>
+public sealed class CompositeScope<TLeft, TRight>(CompositeScope<TLeft, TRight>.Space Source, TLeft Left, TRight Right) : Scope<CompositeScope<TLeft, TRight>>
   where TLeft : Scope<TLeft>
   where TRight : Scope<TRight>
 {
+  /// <summary>
+  /// The space in which this scope resides.
+  /// </summary>
+  public Space Source { get; } = Source;
+
   /// <summary>
   /// The value of the first dimension in the tuple.
   /// </summary>
@@ -67,29 +72,45 @@ public sealed class CompositeScope<TLeft, TRight>(TLeft Left, TRight Right) : Sc
   /// <returns><c>true</c> if the other scope is acceptable, <c>false</c> if not</returns>
   public bool IsSatisfiedBy(CompositeScope<TLeft, TRight> Other)
   {
+    if (Source != Other.Source)
+      throw new InvalidOperationException("Cannot compare scopes from different spaces.");
+
     return Left.IsSatisfiedBy(Other.Left) && Right.IsSatisfiedBy(Other.Right);
   }
 
   /// <summary>
   /// The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}"/> lives.
   /// </summary>
-  /// <param name="LeftDimension">The definition of the first dimension.</param>
-  /// <param name="RightDimension">The definition of the second dimension.</param>
-  public sealed class Space(ScopeSpace<TLeft> LeftDimension, ScopeSpace<TRight> RightDimension)
-    : ScopeSpace<CompositeScope<TLeft, TRight>>
+  public sealed class Space : ScopeSpace<CompositeScope<TLeft, TRight>>
   {
-    /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Any { get; } = new(LeftDimension.Any, RightDimension.Any);
+    readonly ScopeSpace<TLeft> LeftDimension;
+    readonly ScopeSpace<TRight> RightDimension;
+
+    /// <summary>
+    /// The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}"/> lives.
+    /// </summary>
+    /// <param name="LeftDimension">The definition of the first dimension.</param>
+    /// <param name="RightDimension">The definition of the second dimension.</param>
+    public Space(ScopeSpace<TLeft> LeftDimension, ScopeSpace<TRight> RightDimension)
+    {
+      this.LeftDimension = LeftDimension;
+      this.RightDimension = RightDimension;
+      Any = new(this, LeftDimension.Any, RightDimension.Any);
+      Unspecified = new(this, LeftDimension.Unspecified, RightDimension.Unspecified);
+    }
 
     /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Unspecified { get; } = new(LeftDimension.Unspecified, RightDimension.Unspecified);
+    public CompositeScope<TLeft, TRight> Any { get; }
+
+    /// <inheritdoc />
+    public CompositeScope<TLeft, TRight> Unspecified { get; }
 
     /// <inheritdoc />
     public CompositeScope<TLeft, TRight> Union(
       CompositeScope<TLeft, TRight> L,
       CompositeScope<TLeft, TRight> R)
     {
-      return new(LeftDimension.Union(L.Left, R.Left), RightDimension.Union(L.Right, R.Right));
+      return new(this, LeftDimension.Union(L.Left, R.Left), RightDimension.Union(L.Right, R.Right));
     }
 
     /// <inheritdoc />
@@ -97,7 +118,7 @@ public sealed class CompositeScope<TLeft, TRight>(TLeft Left, TRight Right) : Sc
       CompositeScope<TLeft, TRight> L,
       CompositeScope<TLeft, TRight> R)
     {
-      return new(LeftDimension.Intersection(L.Left, R.Left), RightDimension.Intersection(L.Right, R.Right));
+      return new(this, LeftDimension.Intersection(L.Left, R.Left), RightDimension.Intersection(L.Right, R.Right));
     }
 
     /// <summary>
@@ -108,7 +129,7 @@ public sealed class CompositeScope<TLeft, TRight>(TLeft Left, TRight Right) : Sc
     /// <returns>The combined multi-dimensional scope.</returns>
     public CompositeScope<TLeft, TRight> Combine(TLeft Left, TRight Right)
     {
-      return new(Left, Right);
+      return new(this, Left, Right);
     }
   }
 }

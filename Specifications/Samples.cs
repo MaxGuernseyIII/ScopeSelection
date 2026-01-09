@@ -81,4 +81,14 @@ public class Samples
 
     Included.ShouldBeFalse();
   }
+
+  [TestMethod]
+  public void CompositeStringsSpace()
+  {
+    var Features = ScopeSpaces.SupplyAndDemand<string>();
+    var Scenarios = ScopeSpaces.SupplyAndDemand<string>();
+    var CompositeSpace = ScopeSpaces.Composite(Features, Scenarios);
+    //var BindingScope = CompositeSpace.Combine(Features.For("Scope Resolution"), Scenarios.For());
+
+  }
 }

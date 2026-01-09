@@ -25,7 +25,7 @@ namespace Specifications;
 [TestClass]
 public class CompositeScopeBehaviors
 {
-  ScopeSpace<CompositeScope<MockScope1, MockScope2>> Space = null!;
+  CompositeScope<MockScope1, MockScope2>.Space Space = null!;
   MockScope1.Space Space1 = null!;
   MockScope2.Space Space2 = null!;
 
@@ -41,14 +41,14 @@ public class CompositeScopeBehaviors
   public void AnyIsComposed()
   {
     Space.Any.ShouldBeEquivalentTo(
-      new CompositeScope<MockScope1, MockScope2>(Space1.Any, Space2.Any));
+      Space.Combine(Space1.Any, Space2.Any));
   }
 
   [TestMethod]
   public void UnspecifiedIsComposed()
   {
     Space.Unspecified.ShouldBeEquivalentTo(
-      new CompositeScope<MockScope1, MockScope2>(Space1.Unspecified, Space2.Unspecified));
+      Space.Combine(Space1.Unspecified, Space2.Unspecified));
   }
 
   [TestMethod]
@@ -56,12 +56,12 @@ public class CompositeScopeBehaviors
   {
     var Left = new MockScope1([], [], []);
     var Right = new MockScope2([], [], []);
-    var Composed = new CompositeScope<MockScope1, MockScope2>(
+    var Composed = Space.Combine(
       new([Left], [], []),
       new([Right], [], [])
     );
 
-    Composed.IsSatisfiedBy(new(Left, Right)).ShouldBeTrue();
+    Composed.IsSatisfiedBy(Space.Combine(Left, Right)).ShouldBeTrue();
   }
 
   [TestMethod]
@@ -69,12 +69,12 @@ public class CompositeScopeBehaviors
   {
     var Left = new MockScope1([], [], []);
     var Right = new MockScope2([], [], []);
-    var Composed = new CompositeScope<MockScope1, MockScope2>(
+    var Composed = Space.Combine(
       new([Left], [], []),
       new([], [], [])
     );
 
-    Composed.IsSatisfiedBy(new(Left, Right)).ShouldBeFalse();
+    Composed.IsSatisfiedBy(Space.Combine(Left, Right)).ShouldBeFalse();
   }
 
   [TestMethod]
@@ -82,12 +82,12 @@ public class CompositeScopeBehaviors
   {
     var Left = new MockScope1([], [], []);
     var Right = new MockScope2([], [], []);
-    var Composed = new CompositeScope<MockScope1, MockScope2>(
+    var Composed = Space.Combine(
       new([], [], []),
       new([Right], [], [])
     );
 
-    Composed.IsSatisfiedBy(new(Left, Right)).ShouldBeFalse();
+    Composed.IsSatisfiedBy(Space.Combine(Left, Right)).ShouldBeFalse();
   }
 
   [TestMethod]
@@ -95,12 +95,12 @@ public class CompositeScopeBehaviors
   {
     var Left = new MockScope1([], [], []);
     var Right = new MockScope2([], [], []);
-    var Composed = new CompositeScope<MockScope1, MockScope2>(
+    var Composed = Space.Combine(
       new([], [], []),
       new([], [], [])
     );
 
-    Composed.IsSatisfiedBy(new(Left, Right)).ShouldBeFalse();
+    Composed.IsSatisfiedBy(Space.Combine(Left, Right)).ShouldBeFalse();
   }
 
   [TestMethod]
@@ -113,10 +113,10 @@ public class CompositeScopeBehaviors
     var LeftLeft = new MockScope1([], [(RightLeft, NewLeft)], []);
     var LeftRight = new MockScope2([], [(RightRight, NewRight)], []);
 
-    var Actual = Space.Union(new(LeftLeft, LeftRight),
-      new(RightLeft, RightRight));
+    var Actual = Space.Union(Space.Combine(LeftLeft, LeftRight),
+      Space.Combine(RightLeft, RightRight));
 
-    Actual.ShouldBeEquivalentTo(new CompositeScope<MockScope1, MockScope2>(NewLeft, NewRight));
+    Actual.ShouldBeEquivalentTo(Space.Combine(NewLeft, NewRight));
   }
 
   [TestMethod]
@@ -129,10 +129,10 @@ public class CompositeScopeBehaviors
     var LeftLeft = new MockScope1([], [], [(RightLeft, NewLeft)]);
     var LeftRight = new MockScope2([], [], [(RightRight, NewRight)]);
 
-    var Actual = Space.Intersection(new(LeftLeft, LeftRight),
-      new(RightLeft, RightRight));
+    var Actual = Space.Intersection(Space.Combine(LeftLeft, LeftRight),
+      Space.Combine(RightLeft, RightRight));
 
-    Actual.ShouldBeEquivalentTo(new CompositeScope<MockScope1, MockScope2>(NewLeft, NewRight));
+    Actual.ShouldBeEquivalentTo(Space.Combine(NewLeft, NewRight));
   }
 
   [TestMethod]
@@ -152,11 +152,24 @@ public class CompositeScopeBehaviors
     Demanded.IsSatisfiedBy(Supplied).ShouldBe(true);
   }
 
-  class Statement
+  [TestMethod]
+  public void ScanningTokensFromDifferentSpacesNotSupported()
   {
+    var Token = new MockToken();
+    var Dimension1 = ScopeSpaces.SupplyAndDemand<MockToken>();
+    var Dimension2 = ScopeSpaces.SupplyAndDemand<MockToken>();
+    var CombinedScopeSpace1 = ScopeSpaces.Composite(Dimension1, Dimension2);
+    var CombinedScopeSpace2 = ScopeSpaces.Composite(Dimension1, Dimension2);
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      CombinedScopeSpace1.Combine(Dimension1.For(Token), Dimension2.For(Token))
+        .IsSatisfiedBy(
+          CombinedScopeSpace2.Combine(Dimension1.For(Token), Dimension2.For(Token)));
+    }).Message.ShouldBe("Cannot compare scopes from different spaces.");
   }
 
-  class Parameter
+  class Statement
   {
   }
 }

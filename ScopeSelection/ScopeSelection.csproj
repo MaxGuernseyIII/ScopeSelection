@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <Authors>Max Guernsey</Authors>
+    <Company>Hexagon Software LLC</Company>
+
+    <Description>A simple, extensible system for identifying and selecting scopes within sets.</Description>
+
+    <PackageTags>sets;scope;constraints</PackageTags>
+    <PackageProjectUrl>https://github.com/MaxGuernseyIII/ScopeSelection</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MaxGuernseyIII/ScopeSelection</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

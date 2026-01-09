@@ -4,6 +4,8 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="README" />
+    <File Path="README.md" />
   </Folder>
+  <Project Path="ScopeSelection/ScopeSelection.csproj" />
+  <Project Path="Specifications/Specifications.csproj" />
 </Solution>

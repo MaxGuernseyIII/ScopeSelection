@@ -284,32 +284,31 @@ public class SupplyAndDemandScopeBehaviors
     L.GetMemento().GetRawText().ShouldNotBe(R.GetMemento().GetRawText());
   }
 
-  public static IReadOnlyList<SupplyAndDemandScope<string>> DistinctScopes
-  {
-    get
-    {
-      var S = StringTokenSpace;
-      var T1 = Any.String();
-      var T2 = Any.String();
+  public static IReadOnlyList<SupplyAndDemandScope<string>> DistinctScopes { get; } = MakeDistinctScopes();
 
-      return
-      [
-        S.Any,
-        S.Unspecified,
-        S.Demand(T1),
-        S.Demand(T2),
-        S.Supply(T1),
-        S.Supply(T2),
-        S.For(T1),
-        S.For(T2),
-        S.Union(S.For(T1), S.For(T2)),
-        S.Union(S.Supply(T2), S.For(T1)),
-        S.Union(S.For(T2), S.Demand(T1)),
-        S.Intersection(S.For(T1), S.For(T2)),
-        S.Intersection(S.Supply(T2), S.For(T1)),
-        S.Intersection(S.For(T2), S.Demand(T1))
-      ];
-    }
+  static IReadOnlyList<SupplyAndDemandScope<string>> MakeDistinctScopes()
+  {
+    var S = StringTokenSpace;
+    var T1 = "t1";
+    var T2 = "t2";
+
+    return
+    [
+      S.Any,
+      S.Unspecified,
+      S.Demand(T1),
+      S.Demand(T2),
+      S.Supply(T1),
+      S.Supply(T2),
+      S.For(T1),
+      S.For(T2),
+      S.Union(S.For(T1), S.For(T2)),
+      S.Union(S.Supply(T2), S.For(T1)),
+      S.Union(S.For(T2), S.Demand(T1)),
+      S.Intersection(S.For(T1), S.For(T2)),
+      S.Intersection(S.Supply(T2), S.For(T1)),
+      S.Intersection(S.For(T2), S.Demand(T1))
+    ];
   }
 
   public static IReadOnlyList<(SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)> NonEquivalentPairs

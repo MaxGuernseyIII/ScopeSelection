@@ -195,7 +195,10 @@ public class CompositeScopeBehaviors
     [
       S.Any,
       S.Unspecified,
-      S.Combine(D.Demand(T1), C.Combine(D.Demand(T2), D.Demand(T3)))
+      S.Combine(D.Demand(T1), C.Combine(D.Demand(T2), D.Demand(T3))),
+      S.Combine(D.Demand(T3), C.Combine(D.Demand(T2), D.Demand(T1))),
+      S.Combine(D.Demand(T2), C.Combine(D.Demand(T1), D.Demand(T3))),
+      S.Combine(D.Demand(T2), C.Combine(D.Demand(T3), D.Demand(T1))),
     ];
   }
 

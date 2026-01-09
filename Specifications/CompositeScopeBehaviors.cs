@@ -153,20 +153,13 @@ public class CompositeScopeBehaviors
   }
 
   [TestMethod]
-  public void ScanningTokensFromDifferentSpacesNotSupported()
+  public void IsDistinct()
   {
-    var Token = new MockToken();
-    var Dimension1 = ScopeSpaces.SupplyAndDemand<MockToken>();
-    var Dimension2 = ScopeSpaces.SupplyAndDemand<MockToken>();
-    var CombinedScopeSpace1 = ScopeSpaces.Composite(Dimension1, Dimension2);
-    var CombinedScopeSpace2 = ScopeSpaces.Composite(Dimension1, Dimension2);
+    var Space = ScopeSpaces.Composite(new MockScope1.Space(), new MockScope2.Space());
 
-    Assert.Throws<InvalidOperationException>(() =>
-    {
-      CombinedScopeSpace1.Combine(Dimension1.For(Token), Dimension2.For(Token))
-        .IsSatisfiedBy(
-          CombinedScopeSpace2.Combine(Dimension1.For(Token), Dimension2.For(Token)));
-    }).Message.ShouldBe("Cannot compare scopes from different spaces.");
+    Space.ShouldBeAssignableTo<DistinctSpaceScope<
+      CompositeScope<MockScope1, MockScope2>.Space,
+      CompositeScope<MockScope1, MockScope2>>.DistinctSpace>();
   }
 
   class Statement

@@ -1,5 +1,9 @@
 <Solution>
+  <Folder Name="/CICD/">
+    <File Path=".github/workflows/cicd.yml" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
+    <File Path="README" />
   </Folder>
 </Solution>

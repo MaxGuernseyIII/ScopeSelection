@@ -36,8 +36,8 @@ public sealed class SupplyAndDemandScope<T>
   readonly Predicate<T> SupportsToken;
 
   SupplyAndDemandScope(
-    Space Origin, 
-    Predicate<Predicate<T>> CheckForSupport, 
+    Space Origin,
+    Predicate<Predicate<T>> CheckForSupport,
     Predicate<T> SupportsToken,
     MementoStructure Structure) : base(Origin)
   {
@@ -78,21 +78,31 @@ public sealed class SupplyAndDemandScope<T>
     return JsonSerializer.SerializeToElement(Structure, SerializationOptions.JsonOptions);
   }
 
+  /// <inheritdoc />
+  public override string ToString()
+  {
+    return Structure.ToString();
+  }
+
   /// <summary>
   ///   The <see cref="ScopeSpace{ScopeImplementation}" /> for the containing class.
   /// </summary>
   public sealed class Space : DistinctSpace, ScopeSpace<SupplyAndDemandScope<T>>
   {
-    internal Func<T, JsonElement> SerializeToken = Token => JsonSerializer.SerializeToDocument(Token, SerializationOptions.JsonOptions).RootElement;
-    internal Func<JsonElement, T> DeserializeToken = Element => JsonSerializer.Deserialize<T>(Element.GetRawText(), SerializationOptions.JsonOptions)!;
+    internal TokenSerializer TokenSerializer;
 
-    /// <summary>
-    ///   Constructs a new, distinct space.
-    /// </summary>
-    public Space()
+    internal Space(TokenSerializer? TokenSerializer = null)
     {
+      this.TokenSerializer = TokenSerializer ?? new()
+      {
+        DeserializeToken = Element =>
+          JsonSerializer.Deserialize<T>(Element.GetRawText(), SerializationOptions.JsonOptions)!,
+
+        SerializeToken = Token =>
+          JsonSerializer.SerializeToDocument(Token, SerializationOptions.JsonOptions).RootElement
+      };
       Unspecified = new(this, Always, Never, new());
-      Any = new(this, Always, Always, new() { IsAny = true });
+      Any = new(this, Always, Always, new() {IsAny = true});
     }
 
     /// <inheritdoc />
@@ -100,6 +110,15 @@ public sealed class SupplyAndDemandScope<T>
 
     /// <inheritdoc />
     public override SupplyAndDemandScope<T> Unspecified { get; }
+
+
+    /// <inheritdoc />
+    public override SupplyAndDemandScope<T> FromMemento(JsonElement Memento)
+    {
+      var Structure =
+        JsonSerializer.Deserialize<MementoStructure>(Memento.GetRawText(), SerializationOptions.JsonOptions)!;
+      return FromStructure(Structure);
+    }
 
     /// <inheritdoc />
     protected override SupplyAndDemandScope<T> UnionWithinSpace(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
@@ -145,7 +164,7 @@ public sealed class SupplyAndDemandScope<T>
     /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> For(T Token)
     {
-      var TokenJson = SerializeToken(Token);
+      var TokenJson = TokenSerializer.SerializeToken(Token);
       return new(this, DemandToken(Token), SupplyToken(Token), new()
       {
         ForToken = TokenJson
@@ -171,8 +190,9 @@ public sealed class SupplyAndDemandScope<T>
     {
       return new(this, DemandTokens(Tokens), Never, new()
       {
-        DemandedTokens = [
-          ..Tokens.Select(SerializeToken)
+        DemandedTokens =
+        [
+          ..Tokens.Select(TokenSerializer.SerializeToken)
         ]
       });
     }
@@ -196,8 +216,9 @@ public sealed class SupplyAndDemandScope<T>
     {
       return new(this, Never, SupplyTokens(Tokens), new()
       {
-        SupplyTokens = [
-          ..Tokens.Select(SerializeToken)
+        SupplyTokens =
+        [
+          ..Tokens.Select(TokenSerializer.SerializeToken)
         ]
       });
     }
@@ -222,33 +243,35 @@ public sealed class SupplyAndDemandScope<T>
       return Supplied => Supplied(Required);
     }
 
-
-    /// <inheritdoc />
-    public override SupplyAndDemandScope<T> FromMemento(JsonElement Memento)
-    {
-      var Structure = JsonSerializer.Deserialize<MementoStructure>(Memento.GetRawText(), SerializationOptions.JsonOptions)!;
-      return FromStructure(Structure);
-    }
-
     SupplyAndDemandScope<T> FromStructure(MementoStructure Structure)
     {
       return Structure switch
       {
         {IsAny: true} => Any,
-        {Union: {} U} => Union(FromStructure(U.L), FromStructure(U.R)),
-        {Intersection: {} I} => Intersection(FromStructure(I.L), FromStructure(I.R)),
-        {SupplyTokens: null, DemandedTokens: {} Demands} => Demand(Demands.Select(DeserializeToken)),
-        {SupplyTokens: {} Supplies, DemandedTokens: null} => Supply(Supplies.Select(DeserializeToken)),
-        {ForToken: {} F} => For(DeserializeToken(F)),
+        {Union: { } U} => Union(FromStructure(U.L), FromStructure(U.R)),
+        {Intersection: { } I} => Intersection(FromStructure(I.L), FromStructure(I.R)),
+        {SupplyTokens: null, DemandedTokens: { } Demands} => Demand(Demands.Select(TokenSerializer.DeserializeToken)),
+        {SupplyTokens: { } Supplies, DemandedTokens: null} => Supply(Supplies.Select(TokenSerializer.DeserializeToken)),
+        {ForToken: { } F} => For(TokenSerializer.DeserializeToken(F)),
         _ => Unspecified
       };
     }
   }
 
-  /// <inheritdoc />
-  public override string ToString()
+  /// <summary>
+  ///   Serializes and deserializes tokens.
+  /// </summary>
+  public class TokenSerializer
   {
-    return Structure.ToString();
+    /// <summary>
+    ///   Converts a token to a <see cref="JsonElement" />.
+    /// </summary>
+    public required Func<T, JsonElement> SerializeToken { get; set; }
+
+    /// <summary>
+    ///   Converts a <see cref="JsonElement" /> to a token.
+    /// </summary>
+    public required Func<JsonElement, T> DeserializeToken { get; set; }
   }
 
   class MementoSetOperatorStructure
@@ -270,12 +293,14 @@ public sealed class SupplyAndDemandScope<T>
     {
       return this switch
       {
-        { IsAny: true } => "any",
-        { Union: { } U } => $"({U.L}) | ({U.R})",
-        { Intersection: { } I } => $"({I.L}) & ({I.R})",
-        { SupplyTokens: null, DemandedTokens: { } Demands } => $"demand({string.Join(", ", Demands.Select(D => D.GetRawText()))})",
-        { SupplyTokens: { } Supplies, DemandedTokens: null } => $"supply({string.Join(", ", Supplies.Select(D => D.GetRawText()))})",
-        { ForToken: { } F } => $"for({F.GetRawText()})",
+        {IsAny: true} => "any",
+        {Union: { } U} => $"({U.L}) | ({U.R})",
+        {Intersection: { } I} => $"({I.L}) & ({I.R})",
+        {SupplyTokens: null, DemandedTokens: { } Demands} =>
+          $"demand({string.Join(", ", Demands.Select(D => D.GetRawText()))})",
+        {SupplyTokens: { } Supplies, DemandedTokens: null} =>
+          $"supply({string.Join(", ", Supplies.Select(D => D.GetRawText()))})",
+        {ForToken: { } F} => $"for({F.GetRawText()})",
         _ => "unspecified"
       };
     }

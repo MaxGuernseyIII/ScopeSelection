@@ -31,8 +31,8 @@ public static class ScopeSpaces
   /// </summary>
   /// <typeparam name="Token">The type of token to supply and/or demand.</typeparam>
   /// <returns>The requested <see cref="ScopeSpace{ScopeImplementation}"/>.</returns>
-  public static SupplyAndDemandScope<Token>.Space SupplyAndDemand<Token>()
+  public static SupplyAndDemandScope<Token>.Space SupplyAndDemand<Token>(SupplyAndDemandScope<Token>.TokenSerializer? TokenSerializer = null)
   {
-    return new();
+    return new(TokenSerializer);
   }
 }

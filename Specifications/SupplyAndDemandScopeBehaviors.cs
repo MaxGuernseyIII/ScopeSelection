@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace Specifications;
 
 [TestClass]
@@ -286,6 +288,37 @@ public class SupplyAndDemandScopeBehaviors
   public void SelfEquivalence(SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)
   {
     L.GetMemento().GetRawText().ShouldBe(R.GetMemento().GetRawText());
+  }
+
+  [TestMethod]
+  public void SerializingTokens()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+    var ModifiedSpace = ModifiedStringSpace();
+    var Actual = ModifiedSpace.Demand("a");
+
+    Actual.GetMemento().GetRawText().ShouldBe(ScopeSpace.Demand("ax").GetMemento().GetRawText());
+  }
+
+  [TestMethod]
+  public void DeserializingTokens()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+    var ModifiedSpace = ModifiedStringSpace();
+    var Original = ScopeSpace.Demand("ax");
+    var Actual = ModifiedSpace.FromMemento(Original.GetMemento());
+    var Compared = ScopeSpace.Demand("ax");
+
+    Actual.GetMemento().GetRawText().ShouldBe(Compared.GetMemento().GetRawText());
+  }
+
+  static SupplyAndDemandScope<string>.Space ModifiedStringSpace()
+  {
+    return ScopeSpaces.SupplyAndDemand<string>(new()
+    {
+      SerializeToken = Token => JsonSerializer.SerializeToDocument(Token + "x").RootElement,
+      DeserializeToken = Element => JsonSerializer.Deserialize<string>(Element.GetRawText())![..^1]
+    });
   }
 
   [DynamicData(nameof(NonEquivalentPairs))]

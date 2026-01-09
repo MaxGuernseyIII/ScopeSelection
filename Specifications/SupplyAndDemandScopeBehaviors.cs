@@ -230,4 +230,16 @@ public class SupplyAndDemandScopeBehaviors
     ScopeSpace.Union(ScopeSpace.Demand(Token1), ScopeSpace.Demand(Token2))
       .IsSatisfiedBy(ScopeSpace.Unspecified).ShouldBeFalse();
   }
+
+  [TestMethod]
+  public void ScanningTokensFromDifferentSpacesNotSupported()
+  {
+    var Token = new MockToken();
+    var AlternateSpace = ScopeSpaces.SupplyAndDemand<MockToken>();
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      ScopeSpace.For(Token).IsSatisfiedBy(AlternateSpace.For(Token));
+    }).Message.ShouldBe("Cannot compare scopes from different spaces.");
+  }
 }

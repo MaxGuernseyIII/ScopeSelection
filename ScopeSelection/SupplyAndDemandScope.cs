@@ -28,18 +28,23 @@ namespace ScopeSelection;
 /// <typeparam name="T">The type of token.</typeparam>
 public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
 {
-  internal SupplyAndDemandScope(Predicate<Predicate<T>> CheckForSupport, Predicate<T> SupportsToken)
+  internal SupplyAndDemandScope(Space Source, Predicate<Predicate<T>> CheckForSupport, Predicate<T> SupportsToken)
   {
+    this.Source = Source;
     this.CheckForSupport = CheckForSupport;
     this.SupportsToken = SupportsToken;
   }
 
+  readonly Space Source;
   readonly Predicate<Predicate<T>> CheckForSupport;
   readonly Predicate<T> SupportsToken;
 
   /// <inheritdoc />
   public bool IsSatisfiedBy(SupplyAndDemandScope<T> Other)
   {
+    if (Source != Other.Source)
+      throw new InvalidOperationException("Cannot compare scopes from different spaces.");
+
     return CheckForSupport(Other.SupportsToken);
   }
 
@@ -68,11 +73,17 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
   /// </summary>
   public sealed class Space : ScopeSpace<SupplyAndDemandScope<T>>
   {
-    /// <inheritdoc />
-    public SupplyAndDemandScope<T> Any { get; } = new(Always, Always);
+    public Space()
+    {
+      Unspecified = new(this, Always, Never);
+      Any = new(this, Always, Always);
+    }
 
     /// <inheritdoc />
-    public SupplyAndDemandScope<T> Unspecified { get; } = new(Always, Never);
+    public SupplyAndDemandScope<T> Any { get; }
+
+    /// <inheritdoc />
+    public SupplyAndDemandScope<T> Unspecified { get; }
 
     /// <inheritdoc />
     public SupplyAndDemandScope<T> Union(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
@@ -81,7 +92,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
       var RSupportsToken = R.SupportsToken;
       var LCheckForSupport = L.CheckForSupport;
       var RCheckForSupport = R.CheckForSupport;
-      return new(Support => LCheckForSupport(Support) || RCheckForSupport(Support), Token => LSupportsToken(Token) || RSupportsToken(Token));
+      return new(this, Support => LCheckForSupport(Support) || RCheckForSupport(Support), Token => LSupportsToken(Token) || RSupportsToken(Token));
     }
 
     /// <inheritdoc />
@@ -91,7 +102,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
       var RSupportsToken = R.SupportsToken;
       var LCheckForSupport = L.CheckForSupport;
       var RCheckForSupport = R.CheckForSupport;
-      return new(Support => LCheckForSupport(Support) && RCheckForSupport(Support), Token => LSupportsToken(Token) && RSupportsToken(Token));
+      return new(this, Support => LCheckForSupport(Support) && RCheckForSupport(Support), Token => LSupportsToken(Token) && RSupportsToken(Token));
     }
 
     /// <summary>
@@ -101,7 +112,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
     public SupplyAndDemandScope<T> For(T Token)
     {
-      return new(DemandToken(Token), SupplyToken(Token));
+      return new(this, DemandToken(Token), SupplyToken(Token));
     }
 
     /// <summary>
@@ -121,7 +132,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
     public SupplyAndDemandScope<T> Demand(IEnumerable<T> Tokens)
     {
-      return new(DemandTokens(Tokens), Never);
+      return new(this, DemandTokens(Tokens), Never);
     }
 
     /// <summary>
@@ -131,7 +142,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
     public SupplyAndDemandScope<T> Supply(T Token)
     {
-      return new(Never, SupplyToken(Token));
+      return new(this, Never, SupplyToken(Token));
     }
 
     /// <summary>
@@ -141,15 +152,15 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
     public SupplyAndDemandScope<T> Supply(IEnumerable<T> Tokens)
     {
-      return new(Never, SupplyTokens(Tokens));
+      return new(this, Never, SupplyTokens(Tokens));
     }
 
-    Predicate<Predicate<T>> DemandTokens(IEnumerable<T> Tokens)
+    static Predicate<Predicate<T>> DemandTokens(IEnumerable<T> Tokens)
     {
       return Demanded => Tokens.All(Token => Demanded(Token));
     }
 
-    Predicate<T> SupplyTokens(IEnumerable<T> Tokens)
+    static Predicate<T> SupplyTokens(IEnumerable<T> Tokens)
     {
       return Tokens.Contains;
     }

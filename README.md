@@ -83,10 +83,73 @@ At its core, this package provides the abstraction to solve this problem, but it
 
 ## Built-In Scope Types
 
-This package provides two built-in types of scope:
+While the fundamental purpose of the library is to provide the contract, this package also provides two built-in types of scope:
 
 1. A scope that operates by supply and demand of tokens
 1. A scope that combines two other scopes into a multidimensional scope
 
 Later, an hierarchical built-in may be added.
 
+## Supply and Demand
+
+A supply and demand scope space involves explicit declarations involving tokens. These tokens can be of any type.
+
+Following is an example of use.
+
+```csharp
+  [TestMethod]
+  public void SelectItem()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<ClauseType>();
+    var BindingScope = ScopeSpace.Supply(Given);
+
+    var Included = ScopeSpace.Demand(Given).IsSatisfiedBy(BindingScope);
+
+    Included.ShouldBeTrue();
+  }
+
+  [TestMethod]
+  public void FailToSelectItem()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<ClauseType>();
+    var BindingScope = ScopeSpace.Supply([Given, Then]);
+
+    var Included = ScopeSpace.Demand(When).IsSatisfiedBy(BindingScope);
+
+    Included.ShouldBeFalse();
+  }
+```
+
+## Composite
+
+A composite scope space is multi-dimensional.
+
+```csharp
+  [TestMethod]
+  public void SelectItemInCompositeSpace()
+  {
+    var ClauseTypes = ScopeSpaces.SupplyAndDemand<ClauseType>();
+    var Features = ScopeSpaces.SupplyAndDemand<string>();
+    var CompositeSpace = ScopeSpaces.Composite(ClauseTypes, Features);
+    var BindingScope = CompositeSpace.Combine(ClauseTypes.Any, Features.Supply("Scope Resolution"));
+
+    var Included = CompositeSpace.Combine(ClauseTypes.Demand(Given), Features.Any).IsSatisfiedBy(BindingScope);
+
+    Included.ShouldBeTrue();
+  }
+
+  [TestMethod]
+  public void FailCompositeSelectionDueToOneDimension()
+  {
+    var ClauseTypes = ScopeSpaces.SupplyAndDemand<ClauseType>();
+    var Features = ScopeSpaces.SupplyAndDemand<string>();
+    var CompositeSpace = ScopeSpaces.Composite(ClauseTypes, Features);
+    var BindingScope = CompositeSpace.Combine(ClauseTypes.Unspecified, Features.Supply("Scope Resolution"));
+
+    var Included = CompositeSpace.Combine(ClauseTypes.Demand(Given), Features.Any).IsSatisfiedBy(BindingScope);
+
+    Included.ShouldBeFalse();
+  }
+```
+
+It does not matter the two underlying dimensions are. You can even have two dimensions from the exact same type of space.

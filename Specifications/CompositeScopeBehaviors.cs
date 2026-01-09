@@ -173,3 +173,105 @@ public class CompositeScopeBehaviors
   {
   }
 }
+
+[TestClass]
+public class DistinctSpaceScopeBehaviors
+{
+  [TestMethod]
+  public void CannotCompareFromDifferentSpaces()
+  {
+    var Space1 = new MockDistinctSpaceScope.Space();
+    var Space2 = new MockDistinctSpaceScope.Space();
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      new MockDistinctSpaceScope(Space1)
+        .IsSatisfiedBy(
+          new(Space2));
+    }).Message.ShouldBe("Cannot compare scopes from different spaces.");
+  }
+  [TestMethod]
+  public void CannotUnionFromDifferentSpaces()
+  {
+    var Space1 = new MockDistinctSpaceScope.Space();
+    var Space2 = new MockDistinctSpaceScope.Space();
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Union(new(Space1), new(Space1));
+    }).Message.ShouldBe("Cannot union scopes from different spaces.");
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Union(new(Space2), new(Space1));
+    }).Message.ShouldBe("Cannot union scopes from different spaces.");
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Union(new(Space1), new(Space2));
+    }).Message.ShouldBe("Cannot union scopes from different spaces.");
+  }
+
+  [TestMethod]
+  public void SatisfiedInSameSpace()
+  {
+    var Space = new MockDistinctSpaceScope.Space();
+    var Solution = new MockDistinctSpaceScope(Space);
+    var Requirement = new MockDistinctSpaceScope(Space)
+    {
+      SatisfiedBy = { Solution }
+    };
+
+    var Satisfied = Requirement.IsSatisfiedBy(Solution);
+
+    Satisfied.ShouldBeTrue();
+  }
+
+  [TestMethod]
+  public void UnsatisfiedInSameSpace()
+  {
+    var Space = new MockDistinctSpaceScope.Space();
+    var Solution = new MockDistinctSpaceScope(Space);
+    var Requirement = new MockDistinctSpaceScope(Space);
+
+    var Satisfied = Requirement.IsSatisfiedBy(Solution);
+
+    Satisfied.ShouldBeFalse();
+  }
+
+  class MockDistinctSpaceScope(MockDistinctSpaceScope.Space Origin) : DistinctSpaceScope<MockDistinctSpaceScope.Space, MockDistinctSpaceScope>(Origin)
+  {
+    public List<MockDistinctSpaceScope> SatisfiedBy { get; } = [];
+
+    public class Space : DistinctSpace
+    {
+      public List<(MockDistinctSpaceScope L, MockDistinctSpaceScope R, MockDistinctSpaceScope P)> Unions { get; } = [];
+
+      public List<(MockDistinctSpaceScope L, MockDistinctSpaceScope R, MockDistinctSpaceScope P)> Intersections { get; } =
+        [];
+
+      public override MockDistinctSpaceScope Any => throw new NotImplementedException();
+
+      public override MockDistinctSpaceScope Unspecified => throw new NotImplementedException();
+
+      protected override MockDistinctSpaceScope UnionWithinSpace(
+        MockDistinctSpaceScope L,
+        MockDistinctSpaceScope R)
+      {
+        return Unions.Single(U => U.L == L && U.R == R).P;
+      }
+
+      protected override MockDistinctSpaceScope IntersectionWithinSpace(
+        MockDistinctSpaceScope L,
+        MockDistinctSpaceScope R)
+      {
+        return Intersections.Single(U => U.L == L && U.R == R).P;
+      }
+    }
+
+    protected override bool IsSatisfiedByWithinSpace(MockDistinctSpaceScope Other)
+    {
+      return SatisfiedBy.Contains(Other);
+    }
+  }
+}

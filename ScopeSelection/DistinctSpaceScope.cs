@@ -51,6 +51,9 @@ public abstract class DistinctSpaceScope<SpaceImplementation, Implementation>(Sp
     /// <inheritdoc />
     public Implementation Union(Implementation L, Implementation R)
     {
+      RequireSameSpace(L.Origin, this, "Cannot union scopes from different spaces.");
+      RequireSameSpace(R.Origin, this, "Cannot union scopes from different spaces.");
+
       return UnionWithinSpace(L, R);
     }
 
@@ -61,24 +64,24 @@ public abstract class DistinctSpaceScope<SpaceImplementation, Implementation>(Sp
     }
 
     /// <inheritdoc cref="Union" />
-    protected abstract Implementation UnionWithinSpace(Implementation DistinctSpaceScope, Implementation Implementation);
+    protected abstract Implementation UnionWithinSpace(Implementation L, Implementation R);
 
     /// <inheritdoc cref="Intersection" />
-    protected abstract Implementation IntersectionWithinSpace(Implementation DistinctSpaceScope, Implementation Implementation);
+    protected abstract Implementation IntersectionWithinSpace(Implementation L, Implementation R);
   }
 
   /// <inheritdoc />
   public bool IsSatisfiedBy(Implementation Other)
   {
-    RequireSameSpace(Origin, Other.Origin);
+    RequireSameSpace(Origin, Other.Origin, "Cannot compare scopes from different spaces.");
 
     return IsSatisfiedByWithinSpace(Other);
   }
 
-  static void RequireSameSpace(SpaceImplementation L, SpaceImplementation R)
+  static void RequireSameSpace(object L, object R, string Message)
   {
     if (L != R)
-      throw new InvalidOperationException("Cannot compare scopes from different spaces.");
+      throw new InvalidOperationException(Message);
   }
 
   /// <inheritdoc cref="IsSatisfiedBy" />

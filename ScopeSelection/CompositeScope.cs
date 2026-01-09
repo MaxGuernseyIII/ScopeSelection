@@ -28,66 +28,59 @@ namespace ScopeSelection;
 ///   Inclusion in the resulting combined scope requires the independent inclusion on the left and right dimensions.
 /// </summary>
 /// <example>
-/// var TypeDimension = ScopeSpaces.SupplyAndDemand&lt;Type&gt;();
-/// var TagsDimension = ScopeSpaces.SupplyAndDemand&lt;string&gt;();
-/// var CombinedScopeSpace = ScopeSpaces.Composite(TypeDimension, TagsDimension);
-/// var Supplied = CombinedScopeSpace.Combine(
+///   var TypeDimension = ScopeSpaces.SupplyAndDemand&lt;Type&gt;();
+///   var TagsDimension = ScopeSpaces.SupplyAndDemand&lt;string&gt;();
+///   var CombinedScopeSpace = ScopeSpaces.Composite(TypeDimension, TagsDimension);
+///   var Supplied = CombinedScopeSpace.Combine(
 ///   TypeDimension.Supply(typeof(Statement)),
 ///   TagsDimension.Supply(["@ui", "@account-management", "@login"]));
-/// var Demanded = CombinedScopeSpace.Combine(
+///   var Demanded = CombinedScopeSpace.Combine(
 ///   TypeDimension.Any,
 ///   TagsDimension.Demand(["@ui", "@login"])
-/// );
-/// 
-/// Demanded.IsSatisfiedBy(Supplied).ShouldBe(true);
+///   );
+///   Demanded.IsSatisfiedBy(Supplied).ShouldBe(true);
 /// </example>
-/// <param name="Left">The first dimension in the tuple.</param>
-/// <param name="Right">The second dimension in the tuple.</param>
 /// <typeparam name="TLeft">The type of the first dimension in the tuple.</typeparam>
 /// <typeparam name="TRight">The ype of the second dimension in the tuple.</typeparam>
-public sealed class CompositeScope<TLeft, TRight>(CompositeScope<TLeft, TRight>.Space Source, TLeft Left, TRight Right) : Scope<CompositeScope<TLeft, TRight>>
+public sealed class CompositeScope<TLeft, TRight> :
+  DistinctSpaceScope<CompositeScope<TLeft, TRight>.Space, CompositeScope<TLeft, TRight>>
   where TLeft : Scope<TLeft>
   where TRight : Scope<TRight>
 {
-  /// <summary>
-  /// The space in which this scope resides.
-  /// </summary>
-  public Space Source { get; } = Source;
-
-  /// <summary>
-  /// The value of the first dimension in the tuple.
-  /// </summary>
-  public TLeft Left { get; } = Left;
-
-
-  /// <summary>
-  /// The value of the second dimension in the tuple.
-  /// </summary>
-  public TRight Right { get; } = Right;
-
-  /// <summary>
-  /// Check if this scope is satisfied by another scope.
-  /// </summary>
-  /// <param name="Other">The scope that must satisfy the requirements of this scope.</param>
-  /// <returns><c>true</c> if the other scope is acceptable, <c>false</c> if not</returns>
-  public bool IsSatisfiedBy(CompositeScope<TLeft, TRight> Other)
+  internal CompositeScope(Space Origin,
+    TLeft Left,
+    TRight Right) : base(Origin)
   {
-    if (Source != Other.Source)
-      throw new InvalidOperationException("Cannot compare scopes from different spaces.");
+    this.Left = Left;
+    this.Right = Right;
+  }
 
+  /// <summary>
+  ///   The value of the first dimension in the tuple.
+  /// </summary>
+  public TLeft Left { get; }
+
+  /// <summary>
+  ///   The value of the second dimension in the tuple.
+  /// </summary>
+  public TRight Right { get; }
+
+  /// <inheritdoc />
+  protected override bool IsSatisfiedByWithinSpace(CompositeScope<TLeft, TRight> Other)
+  {
     return Left.IsSatisfiedBy(Other.Left) && Right.IsSatisfiedBy(Other.Right);
   }
 
   /// <summary>
-  /// The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}"/> lives.
+  ///   The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}" /> lives.
   /// </summary>
-  public sealed class Space : ScopeSpace<CompositeScope<TLeft, TRight>>
+  public sealed class Space : DistinctSpace, ScopeSpace<CompositeScope<TLeft, TRight>>
   {
     readonly ScopeSpace<TLeft> LeftDimension;
     readonly ScopeSpace<TRight> RightDimension;
 
     /// <summary>
-    /// The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}"/> lives.
+    ///   The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}" /> lives.
     /// </summary>
     /// <param name="LeftDimension">The definition of the first dimension.</param>
     /// <param name="RightDimension">The definition of the second dimension.</param>
@@ -100,13 +93,13 @@ public sealed class CompositeScope<TLeft, TRight>(CompositeScope<TLeft, TRight>.
     }
 
     /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Any { get; }
+    public override CompositeScope<TLeft, TRight> Any { get; }
 
     /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Unspecified { get; }
+    public override CompositeScope<TLeft, TRight> Unspecified { get; }
 
     /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Union(
+    protected override CompositeScope<TLeft, TRight> UnionWithinSpace(
       CompositeScope<TLeft, TRight> L,
       CompositeScope<TLeft, TRight> R)
     {
@@ -114,7 +107,7 @@ public sealed class CompositeScope<TLeft, TRight>(CompositeScope<TLeft, TRight>.
     }
 
     /// <inheritdoc />
-    public CompositeScope<TLeft, TRight> Intersection(
+    protected override CompositeScope<TLeft, TRight> IntersectionWithinSpace(
       CompositeScope<TLeft, TRight> L,
       CompositeScope<TLeft, TRight> R)
     {
@@ -122,7 +115,7 @@ public sealed class CompositeScope<TLeft, TRight>(CompositeScope<TLeft, TRight>.
     }
 
     /// <summary>
-    /// Combine two scopes into a tuple.
+    ///   Combine two scopes into a tuple.
     /// </summary>
     /// <param name="Left">The first dimension scope.</param>
     /// <param name="Right">The second dimension scope.</param>

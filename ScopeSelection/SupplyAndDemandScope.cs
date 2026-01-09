@@ -26,25 +26,21 @@ namespace ScopeSelection;
 /// A kind of scope based on supply and demand of tokens.
 /// </summary>
 /// <typeparam name="T">The type of token.</typeparam>
-public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
+public sealed class SupplyAndDemandScope<T> 
+  : DistinctSpaceScope<SupplyAndDemandScope<T>.Space, SupplyAndDemandScope<T>>
 {
-  internal SupplyAndDemandScope(Space Source, Predicate<Predicate<T>> CheckForSupport, Predicate<T> SupportsToken)
+  internal SupplyAndDemandScope(Space Origin, Predicate<Predicate<T>> CheckForSupport, Predicate<T> SupportsToken) : base(Origin)
   {
-    this.Source = Source;
     this.CheckForSupport = CheckForSupport;
     this.SupportsToken = SupportsToken;
   }
 
-  readonly Space Source;
   readonly Predicate<Predicate<T>> CheckForSupport;
   readonly Predicate<T> SupportsToken;
 
   /// <inheritdoc />
-  public bool IsSatisfiedBy(SupplyAndDemandScope<T> Other)
+  protected override bool IsSatisfiedByWithinSpace(SupplyAndDemandScope<T> Other)
   {
-    if (Source != Other.Source)
-      throw new InvalidOperationException("Cannot compare scopes from different spaces.");
-
     return CheckForSupport(Other.SupportsToken);
   }
 
@@ -71,7 +67,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
   /// <summary>
   /// The <see cref="ScopeSpace{ScopeImplementation}" /> for the containing class.
   /// </summary>
-  public sealed class Space : ScopeSpace<SupplyAndDemandScope<T>>
+  public sealed class Space : DistinctSpace, ScopeSpace<SupplyAndDemandScope<T>>
   {
     /// <summary>
     /// Constructs a new, distinct space.
@@ -83,13 +79,13 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     }
 
     /// <inheritdoc />
-    public SupplyAndDemandScope<T> Any { get; }
+    public override SupplyAndDemandScope<T> Any { get; }
 
     /// <inheritdoc />
-    public SupplyAndDemandScope<T> Unspecified { get; }
+    public override SupplyAndDemandScope<T> Unspecified { get; }
 
     /// <inheritdoc />
-    public SupplyAndDemandScope<T> Union(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
+    protected override SupplyAndDemandScope<T> UnionWithinSpace(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
     {
       var LSupportsToken = L.SupportsToken;
       var RSupportsToken = R.SupportsToken;
@@ -99,7 +95,7 @@ public sealed record SupplyAndDemandScope<T> : Scope<SupplyAndDemandScope<T>>
     }
 
     /// <inheritdoc />
-    public SupplyAndDemandScope<T> Intersection(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
+    protected override SupplyAndDemandScope<T> IntersectionWithinSpace(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
     {
       var LSupportsToken = L.SupportsToken;
       var RSupportsToken = R.SupportsToken;

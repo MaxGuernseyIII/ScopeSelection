@@ -232,14 +232,12 @@ public class SupplyAndDemandScopeBehaviors
   }
 
   [TestMethod]
-  public void ScanningTokensFromDifferentSpacesNotSupported()
+  public void IsDistinct()
   {
-    var Token = new MockToken();
-    var AlternateSpace = ScopeSpaces.SupplyAndDemand<MockToken>();
+    var Space = ScopeSpaces.SupplyAndDemand<MockToken>();
 
-    Assert.Throws<InvalidOperationException>(() =>
-    {
-      ScopeSpace.For(Token).IsSatisfiedBy(AlternateSpace.For(Token));
-    }).Message.ShouldBe("Cannot compare scopes from different spaces.");
+    Space.ShouldBeAssignableTo<DistinctSpaceScope<
+      SupplyAndDemandScope<MockToken>.Space,
+      SupplyAndDemandScope<MockToken>>.DistinctSpace>();
   }
 }

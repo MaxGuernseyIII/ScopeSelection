@@ -262,6 +262,34 @@ public class DistinctSpaceScopeBehaviors
     Satisfied.ShouldBeFalse();
   }
 
+  [TestMethod]
+  public void Union()
+  {
+    var Space = new MockDistinctSpaceScope.Space();
+    var L = new MockDistinctSpaceScope(Space);
+    var R = new MockDistinctSpaceScope(Space);
+    var Expected = new MockDistinctSpaceScope(Space);
+    Space.Unions.Add((L, R, Expected));
+
+    var Actual = Space.Union(L, R);
+
+    Actual.ShouldBeSameAs(Expected);
+  }
+
+  [TestMethod]
+  public void Intersection()
+  {
+    var Space = new MockDistinctSpaceScope.Space();
+    var L = new MockDistinctSpaceScope(Space);
+    var R = new MockDistinctSpaceScope(Space);
+    var Expected = new MockDistinctSpaceScope(Space);
+    Space.Intersections.Add((L, R, Expected));
+
+    var Actual = Space.Intersection(L, R);
+
+    Actual.ShouldBeSameAs(Expected);
+  }
+
   class MockDistinctSpaceScope(MockDistinctSpaceScope.Space Origin) : DistinctSpaceScope<MockDistinctSpaceScope.Space, MockDistinctSpaceScope>(Origin)
   {
     public List<MockDistinctSpaceScope> SatisfiedBy { get; } = [];

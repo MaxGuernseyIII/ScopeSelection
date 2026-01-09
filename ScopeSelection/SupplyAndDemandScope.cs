@@ -20,23 +20,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace ScopeSelection;
 
 /// <summary>
-/// A kind of scope based on supply and demand of tokens.
+///   A kind of scope based on supply and demand of tokens.
 /// </summary>
 /// <typeparam name="T">The type of token.</typeparam>
-public sealed class SupplyAndDemandScope<T> 
+public sealed class SupplyAndDemandScope<T>
   : DistinctSpaceScope<SupplyAndDemandScope<T>.Space, SupplyAndDemandScope<T>>
 {
-  internal SupplyAndDemandScope(Space Origin, Predicate<Predicate<T>> CheckForSupport, Predicate<T> SupportsToken) : base(Origin)
+  readonly Predicate<Predicate<T>> CheckForSupport;
+  readonly MementoStructure Structure;
+  readonly Predicate<T> SupportsToken;
+
+  SupplyAndDemandScope(
+    Space Origin, 
+    Predicate<Predicate<T>> CheckForSupport, 
+    Predicate<T> SupportsToken,
+    MementoStructure Structure) : base(Origin)
   {
     this.CheckForSupport = CheckForSupport;
     this.SupportsToken = SupportsToken;
+    this.Structure = Structure;
   }
-
-  readonly Predicate<Predicate<T>> CheckForSupport;
-  readonly Predicate<T> SupportsToken;
 
   /// <inheritdoc />
   protected override bool IsSatisfiedByWithinSpace(SupplyAndDemandScope<T> Other)
@@ -65,17 +73,30 @@ public sealed class SupplyAndDemandScope<T>
   }
 
   /// <summary>
-  /// The <see cref="ScopeSpace{ScopeImplementation}" /> for the containing class.
+  ///   Gets a representation of this <see cref="Scope{Implementation}" /> that can be used to create an equivalent in
+  ///   another <see cref="ScopeSpace{ScopeImplementation}" />.
+  /// </summary>
+  /// <returns>A JSON memento.</returns>
+  public JsonElement GetMemento()
+  {
+    return JsonSerializer.SerializeToElement(Structure);
+  }
+
+  /// <summary>
+  ///   The <see cref="ScopeSpace{ScopeImplementation}" /> for the containing class.
   /// </summary>
   public sealed class Space : DistinctSpace, ScopeSpace<SupplyAndDemandScope<T>>
   {
+    internal Func<T, JsonElement> TokenSerializer = Token => JsonSerializer.SerializeToDocument(Token).RootElement;
+    internal Func<JsonElement, T> TokenDeserializer = Element => JsonSerializer.Deserialize<T>(Element.GetRawText())!;
+
     /// <summary>
-    /// Constructs a new, distinct space.
+    ///   Constructs a new, distinct space.
     /// </summary>
     public Space()
     {
-      Unspecified = new(this, Always, Never);
-      Any = new(this, Always, Always);
+      Unspecified = new(this, Always, Never, new());
+      Any = new(this, Always, Always, new());
     }
 
     /// <inheritdoc />
@@ -91,67 +112,85 @@ public sealed class SupplyAndDemandScope<T>
       var RSupportsToken = R.SupportsToken;
       var LCheckForSupport = L.CheckForSupport;
       var RCheckForSupport = R.CheckForSupport;
-      return new(this, Support => LCheckForSupport(Support) || RCheckForSupport(Support), Token => LSupportsToken(Token) || RSupportsToken(Token));
+      return new(this, Support => LCheckForSupport(Support) || RCheckForSupport(Support),
+        Token => LSupportsToken(Token) || RSupportsToken(Token), new());
     }
 
     /// <inheritdoc />
-    protected override SupplyAndDemandScope<T> IntersectionWithinSpace(SupplyAndDemandScope<T> L, SupplyAndDemandScope<T> R)
+    protected override SupplyAndDemandScope<T> IntersectionWithinSpace(SupplyAndDemandScope<T> L,
+      SupplyAndDemandScope<T> R)
     {
       var LSupportsToken = L.SupportsToken;
       var RSupportsToken = R.SupportsToken;
       var LCheckForSupport = L.CheckForSupport;
       var RCheckForSupport = R.CheckForSupport;
-      return new(this, Support => LCheckForSupport(Support) && RCheckForSupport(Support), Token => LSupportsToken(Token) && RSupportsToken(Token));
+      return new(this, Support => LCheckForSupport(Support) && RCheckForSupport(Support),
+        Token => LSupportsToken(Token) && RSupportsToken(Token), new());
     }
 
     /// <summary>
-    /// Creates a <see cref="Scope{Implementation}"/>> that both satisfies and demands <paramref name="Token"/>.
+    ///   Creates a <see cref="Scope{Implementation}" />> that both satisfies and demands <paramref name="Token" />.
     /// </summary>
     /// <param name="Token">The token in question.</param>
-    /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
+    /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> For(T Token)
     {
-      return new(this, DemandToken(Token), SupplyToken(Token));
+      var TokenJson = TokenSerializer(Token);
+      return new(this, DemandToken(Token), SupplyToken(Token), new()
+      {
+        SupplyTokens = [TokenJson],
+        DemandedTokens = [TokenJson]
+      });
     }
 
     /// <summary>
-    /// Creates a <see cref="Scope{Implementation}"/> that demands <paramref name="Token"/>.
+    ///   Creates a <see cref="Scope{Implementation}" /> that demands <paramref name="Token" />.
     /// </summary>
     /// <param name="Token">The demanded token.</param>
-    /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
+    /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> Demand(T Token)
     {
       return Demand([Token]);
     }
 
     /// <summary>
-    /// Creates a <see cref="Scope{Implementation}"/> that demands <paramref name="Tokens"/>.
+    ///   Creates a <see cref="Scope{Implementation}" /> that demands <paramref name="Tokens" />.
     /// </summary>
     /// <param name="Tokens">The demanded tokens.</param>
-    /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
+    /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> Demand(IEnumerable<T> Tokens)
     {
-      return new(this, DemandTokens(Tokens), Never);
+      return new(this, DemandTokens(Tokens), Never, new()
+      {
+        DemandedTokens = [
+          ..Tokens.Select(TokenSerializer)
+        ]
+      });
     }
 
     /// <summary>
-    /// Creates a <see cref="Scope{Implementation}"/> that demands <paramref name="Token"/>.
+    ///   Creates a <see cref="Scope{Implementation}" /> that demands <paramref name="Token" />.
     /// </summary>
     /// <param name="Token">The demanded token.</param>
-    /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
+    /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> Supply(T Token)
     {
-      return new(this, Never, SupplyToken(Token));
+      return Supply([Token]);
     }
 
     /// <summary>
-    /// Creates a <see cref="Scope{Implementation}"/> that demands <paramref name="Tokens"/>.
+    ///   Creates a <see cref="Scope{Implementation}" /> that demands <paramref name="Tokens" />.
     /// </summary>
     /// <param name="Tokens">The demanded tokens.</param>
-    /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
+    /// <returns>The requested <see cref="Scope{Implementation}" />.</returns>
     public SupplyAndDemandScope<T> Supply(IEnumerable<T> Tokens)
     {
-      return new(this, Never, SupplyTokens(Tokens));
+      return new(this, Never, SupplyTokens(Tokens), new()
+      {
+        SupplyTokens = [
+          ..Tokens.Select(TokenSerializer)
+        ]
+      });
     }
 
     static Predicate<Predicate<T>> DemandTokens(IEnumerable<T> Tokens)
@@ -173,5 +212,11 @@ public sealed class SupplyAndDemandScope<T>
     {
       return Supplied => Supplied(Required);
     }
+  }
+
+  class MementoStructure
+  {
+    public JsonElement[]? DemandedTokens { get; set; }
+    public JsonElement[]? SupplyTokens { get; set; }
   }
 }

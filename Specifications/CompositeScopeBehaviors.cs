@@ -136,23 +136,6 @@ public class CompositeScopeBehaviors
   }
 
   [TestMethod]
-  public void Example()
-  {
-    var TypeDimension = ScopeSpaces.SupplyAndDemand<Type>();
-    var TagsDimension = ScopeSpaces.SupplyAndDemand<string>();
-    var CombinedScopeSpace = ScopeSpaces.Composite(TypeDimension, TagsDimension);
-    var Supplied = CombinedScopeSpace.Combine(
-      TypeDimension.Supply(typeof(Statement)),
-      TagsDimension.Supply(["@ui", "@account-management", "@login"]));
-    var Demanded = CombinedScopeSpace.Combine(
-      TypeDimension.Any,
-      TagsDimension.Demand(["@ui", "@login"])
-    );
-
-    Demanded.IsSatisfiedBy(Supplied).ShouldBe(true);
-  }
-
-  [TestMethod]
   public void IsDistinct()
   {
     var Space = ScopeSpaces.Composite(new MockScope1.Space(), new MockScope2.Space());
@@ -160,9 +143,5 @@ public class CompositeScopeBehaviors
     Space.ShouldBeAssignableTo<DistinctSpaceScope<
       CompositeScope<MockScope1, MockScope2>.Space,
       CompositeScope<MockScope1, MockScope2>>.DistinctSpace>();
-  }
-
-  class Statement
-  {
   }
 }

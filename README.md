@@ -126,23 +126,6 @@ A composite scope space is multi-dimensional.
 
 ```csharp
   [TestMethod]
-  public void Example()
-  {
-    var TypeDimension = ScopeSpaces.SupplyAndDemand<Type>();
-    var TagsDimension = ScopeSpaces.SupplyAndDemand<string>();
-    var CombinedScopeSpace = ScopeSpaces.Composite(TypeDimension, TagsDimension);
-    var Supplied = CombinedScopeSpace.Combine(
-      TypeDimension.Supply(typeof(Statement)),
-      TagsDimension.Supply(["@ui", "@account-management", "@login"]));
-    var Demanded = CombinedScopeSpace.Combine(
-      TypeDimension.Any,
-      TagsDimension.Demand(["@ui", "@login"])
-    );
-
-    Demanded.IsSatisfiedBy(Supplied).ShouldBe(true);
-  }
-
-  [TestMethod]
   public void SelectItemInCompositeSpace()
   {
     var ClauseTypes = ScopeSpaces.SupplyAndDemand<ClauseType>();

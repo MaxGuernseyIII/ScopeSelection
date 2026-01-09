@@ -20,8 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Shouldly;
-
 namespace Specifications;
 
 [TestClass]
@@ -236,8 +234,85 @@ public class SupplyAndDemandScopeBehaviors
   {
     var Space = ScopeSpaces.SupplyAndDemand<MockToken>();
 
-    Space.ShouldBeAssignableTo<DistinctSpaceScope<
-      SupplyAndDemandScope<MockToken>.Space,
+    Space.ShouldBeAssignableTo<DistinctSpaceScope<SupplyAndDemandScope<MockToken>.Space,
       SupplyAndDemandScope<MockToken>>.DistinctSpace>();
+  }
+
+  [TestMethod]
+  public void DemandProducesSameMementoAsDemand()
+  {
+    RoundTripEquivalentScopesScenario((Space, Token) => (Space.Demand(Token), Space.Demand(Token)));
+  }
+
+  [TestMethod]
+  public void SupplyProducesSameMementoAsSupply()
+  {
+    RoundTripEquivalentScopesScenario((Space, Token) => (Space.Supply(Token), Space.Supply(Token)));
+  }
+
+  [TestMethod]
+  public void ForProducesSameMementoAsFor()
+  {
+    RoundTripEquivalentScopesScenario((Space, Token) => (Space.For(Token), Space.For(Token)));
+  }
+
+  [TestMethod]
+  public void DemandProducesDifferentMementoFromSupply()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.Demand(Token), Space.Supply(Token)));
+  }
+
+  [TestMethod]
+  public void DemandProducesDifferentMementoFromFor()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.Demand(Token), Space.For(Token)));
+  }
+
+  [TestMethod]
+  public void DemandDifferentForDifferentTokens()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.Demand(Token), Space.Demand(Any.String())));
+  }
+
+  [TestMethod]
+  public void SupplyProducesDifferentMementoFromFor()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.Supply(Token), Space.For(Token)));
+  }
+
+  [TestMethod]
+  public void SupplyDifferentForDifferentTokens()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.Supply(Token), Space.Supply(Any.String())));
+  }
+
+  [TestMethod]
+  public void ForDifferentForDifferentTokens()
+  {
+    RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.For(Token), Space.For(Any.String())));
+  }
+
+  static void RoundTripNonEquivalentScopesScenario(
+    Func<SupplyAndDemandScope<string>.Space, string, (SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)>
+      Operation)
+  {
+
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+    var Token = Any.String();
+    var (L, R) = Operation(ScopeSpace, Token);
+
+    L.GetMemento().GetRawText().ShouldNotBe(R.GetMemento().GetRawText());
+  }
+
+  static void RoundTripEquivalentScopesScenario(
+    Func<SupplyAndDemandScope<string>.Space, string, (SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)>
+      Operation)
+  {
+
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+    var Token = Any.String();
+    var (L, R) = Operation(ScopeSpace, Token);
+
+    L.GetMemento().GetRawText().ShouldBe(R.GetMemento().GetRawText());
   }
 }

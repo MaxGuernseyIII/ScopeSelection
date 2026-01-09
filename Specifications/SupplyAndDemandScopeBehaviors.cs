@@ -307,9 +307,8 @@ public class SupplyAndDemandScopeBehaviors
     var ModifiedSpace = ModifiedStringSpace();
     var Original = ScopeSpace.Demand("ax");
     var Actual = ModifiedSpace.FromMemento(Original.GetMemento());
-    var Compared = ScopeSpace.Demand("ax");
 
-    Actual.GetMemento().GetRawText().ShouldBe(Compared.GetMemento().GetRawText());
+    Actual.GetMemento().GetRawText().ShouldBe(Original.GetMemento().GetRawText());
   }
 
   static SupplyAndDemandScope<string>.Space ModifiedStringSpace()

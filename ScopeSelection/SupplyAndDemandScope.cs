@@ -72,14 +72,10 @@ public sealed class SupplyAndDemandScope<T>
     return false;
   }
 
-  /// <summary>
-  ///   Gets a representation of this <see cref="Scope{Implementation}" /> that can be used to create an equivalent in
-  ///   another <see cref="ScopeSpace{ScopeImplementation}" />.
-  /// </summary>
-  /// <returns>A JSON memento.</returns>
-  public JsonElement GetMemento()
+  /// <inheritdoc />
+  public override JsonElement GetMemento()
   {
-    return JsonSerializer.SerializeToElement(Structure);
+    return JsonSerializer.SerializeToElement(Structure, SerializationOptions.JsonOptions);
   }
 
   /// <summary>
@@ -87,8 +83,8 @@ public sealed class SupplyAndDemandScope<T>
   /// </summary>
   public sealed class Space : DistinctSpace, ScopeSpace<SupplyAndDemandScope<T>>
   {
-    internal Func<T, JsonElement> SerializeToken = Token => JsonSerializer.SerializeToDocument(Token).RootElement;
-    internal Func<JsonElement, T> DeserializeToken = Element => JsonSerializer.Deserialize<T>(Element.GetRawText())!;
+    internal Func<T, JsonElement> SerializeToken = Token => JsonSerializer.SerializeToDocument(Token, SerializationOptions.JsonOptions).RootElement;
+    internal Func<JsonElement, T> DeserializeToken = Element => JsonSerializer.Deserialize<T>(Element.GetRawText(), SerializationOptions.JsonOptions)!;
 
     /// <summary>
     ///   Constructs a new, distinct space.
@@ -226,14 +222,11 @@ public sealed class SupplyAndDemandScope<T>
       return Supplied => Supplied(Required);
     }
 
-    /// <summary>
-    /// Reconstitute a <see cref="Scope{Implementation}"/> from a memento.
-    /// </summary>
-    /// <param name="Memento">The definition of the <see cref="Scope{Implementation}"/> to reconstitute.</param>
-    /// <returns>The requested object.</returns>
-    public SupplyAndDemandScope<T> FromMemento(JsonElement Memento)
+
+    /// <inheritdoc />
+    public override SupplyAndDemandScope<T> FromMemento(JsonElement Memento)
     {
-      var Structure = JsonSerializer.Deserialize<MementoStructure>(Memento.GetRawText())!;
+      var Structure = JsonSerializer.Deserialize<MementoStructure>(Memento.GetRawText(), SerializationOptions.JsonOptions)!;
       return FromStructure(Structure);
     }
 

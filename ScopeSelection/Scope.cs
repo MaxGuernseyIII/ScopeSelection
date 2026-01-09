@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace ScopeSelection;
 
 /// <summary>
@@ -35,4 +37,11 @@ public interface Scope<in Implementation>
   /// <param name="Other">The scope that supplies satisfaction.</param>
   /// <returns><c>true</c> of the requirement manifest in this <see cref="Scope{Implementation}"/> is met by <paramref name="Other"/> and <c>false</c> if not.</returns>
   public bool IsSatisfiedBy(Implementation Other);
+
+  /// <summary>
+  ///   Gets a representation of this <see cref="Scope{Implementation}" /> that can be used to create an equivalent in
+  ///   another <see cref="ScopeSpace{ScopeImplementation}" />.
+  /// </summary>
+  /// <returns>A JSON memento.</returns>
+  JsonElement GetMemento();
 }

@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace ScopeSelection;
 
 /// <summary>
@@ -37,6 +39,12 @@ public sealed class NullScope : Scope<NullScope>
     return true;
   }
 
+  /// <inheritdoc />
+  public JsonElement GetMemento()
+  {
+    return new();
+  }
+
   internal class Space : ScopeSpace<NullScope>
   {
     public NullScope Any { get; } = new();
@@ -50,6 +58,11 @@ public sealed class NullScope : Scope<NullScope>
     }
 
     public NullScope Intersection(NullScope L, NullScope R)
+    {
+      return Any;
+    }
+
+    public NullScope FromMemento(JsonElement Memento)
     {
       return Any;
     }

@@ -22,6 +22,9 @@
 
 namespace Specifications;
 
+using SerializationTestScope = CompositeScope<SupplyAndDemandScope<string>,
+  CompositeScope<SupplyAndDemandScope<string>, SupplyAndDemandScope<string>>>;
+
 [TestClass]
 public class CompositeScopeBehaviors
 {
@@ -144,4 +147,68 @@ public class CompositeScopeBehaviors
       CompositeScope<MockScope1, MockScope2>.Space,
       CompositeScope<MockScope1, MockScope2>>.DistinctSpace>();
   }
+
+  [DynamicData(nameof(DistinctScopes))]
+  [TestMethod]
+  public void RoundTripEquivalence(SerializationTestScope Scope)
+  {
+    var OriginalMemento = Scope.GetMemento();
+
+    var RoundTrippedMemento = SerializationTestSpace.FromMemento(OriginalMemento).GetMemento();
+
+    RoundTrippedMemento.GetRawText().ShouldBe(OriginalMemento.GetRawText());
+  }
+
+  [DynamicData(nameof(EquivalentPairs))]
+  [TestMethod]
+  public void SelfEquivalence(SerializationTestScope L, SerializationTestScope R)
+  {
+    L.GetMemento().GetRawText().ShouldBe(R.GetMemento().GetRawText());
+  }
+
+  [DynamicData(nameof(NonEquivalentPairs))]
+  [TestMethod]
+  public void NonEquivalence(SerializationTestScope L, SerializationTestScope R)
+  {
+    L.GetMemento().GetRawText().ShouldNotBe(R.GetMemento().GetRawText());
+  }
+
+  static readonly SupplyAndDemandScope<string>.Space SerializationTestDimensionSpace = ScopeSpaces.SupplyAndDemand<string>();
+
+  static readonly CompositeScope<SupplyAndDemandScope<string>, SupplyAndDemandScope<string>>.Space SerializationTestCompositeDimension 
+    = ScopeSpaces.Composite(SerializationTestDimensionSpace, SerializationTestDimensionSpace);
+
+  static readonly SerializationTestScope.Space SerializationTestSpace =
+    ScopeSpaces.Composite(SerializationTestDimensionSpace,
+      SerializationTestCompositeDimension);
+
+  static IReadOnlyList<CompositeScope<SupplyAndDemandScope<string>, CompositeScope<SupplyAndDemandScope<string>, SupplyAndDemandScope<string>>>> MakeDistinctScopes()
+  {
+    var S = SerializationTestSpace;
+    var C = SerializationTestCompositeDimension;
+    var D = SerializationTestDimensionSpace;
+    var T1 = "t1";
+    var T2 = "t2";
+    var T3 = "t3";
+
+    return
+    [
+      S.Any,
+      S.Unspecified,
+      S.Combine(D.Demand(T1), C.Combine(D.Demand(T2), D.Demand(T3)))
+    ];
+  }
+
+
+
+  public static IReadOnlyList<SerializationTestScope> DistinctScopes { get; } = MakeDistinctScopes();
+
+  public static IReadOnlyList<(SerializationTestScope, SerializationTestScope)> EquivalentPairs { get; } =
+    [.. MakeDistinctScopes().Zip(MakeDistinctScopes())];
+
+  public static IReadOnlyList<(SerializationTestScope L, SerializationTestScope R)> NonEquivalentPairs
+  {
+    get;
+  }
+    = [.. DistinctScopes.SelectMany(L => DistinctScopes.Where(R => R != L).Select(R => (L, R)))];
 }

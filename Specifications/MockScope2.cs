@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace Specifications;
 
 class MockScope2(
@@ -36,6 +38,11 @@ class MockScope2(
   public bool IsSatisfiedBy(MockScope2 Other)
   {
     return Included.Contains(Other);
+  }
+
+  public JsonElement GetMemento()
+  {
+    throw new NotImplementedException();
   }
 
   public static MockScope2 operator |(MockScope2 L, MockScope2 R)
@@ -63,6 +70,11 @@ class MockScope2(
     public MockScope2 Intersection(MockScope2 L, MockScope2 R)
     {
       return L.Anded.Single(O => O.Other == R).Result;
+    }
+
+    public MockScope2 FromMemento(JsonElement Memento)
+    {
+      throw new NotImplementedException();
     }
   }
 }

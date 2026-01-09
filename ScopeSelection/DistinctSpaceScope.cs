@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace ScopeSelection;
 
 /// <summary>
@@ -75,6 +77,9 @@ public abstract class DistinctSpaceScope<SpaceImplementation, Implementation>(Sp
       RequireSameSpace(L.Origin, this, Message);
       RequireSameSpace(R.Origin, this, Message);
     }
+
+    /// <inheritdoc />
+    public abstract Implementation FromMemento(JsonElement Memento);
   }
 
   /// <inheritdoc />
@@ -93,4 +98,11 @@ public abstract class DistinctSpaceScope<SpaceImplementation, Implementation>(Sp
 
   /// <inheritdoc cref="IsSatisfiedBy" />
   protected abstract bool IsSatisfiedByWithinSpace(Implementation Other);
+
+  /// <summary>
+  ///   Gets a representation of this <see cref="Scope{Implementation}" /> that can be used to create an equivalent in
+  ///   another <see cref="ScopeSpace{ScopeImplementation}" />.
+  /// </summary>
+  /// <returns>A JSON memento.</returns>
+  public abstract JsonElement GetMemento();
 }

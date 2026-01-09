@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace Specifications;
 
 [TestClass]
@@ -166,11 +168,21 @@ public class DistinctSpaceScopeBehaviors
       {
         return Intersections.Single(U => U.L == L && U.R == R).P;
       }
+
+      public override MockDistinctSpaceScope FromMemento(JsonElement Memento)
+      {
+        throw new NotImplementedException();
+      }
     }
 
     protected override bool IsSatisfiedByWithinSpace(MockDistinctSpaceScope Other)
     {
       return SatisfiedBy.Contains(Other);
+    }
+
+    public override JsonElement GetMemento()
+    {
+      throw new NotImplementedException();
     }
   }
 }

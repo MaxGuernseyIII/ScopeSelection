@@ -20,6 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace ScopeSelection;
 
 /// <summary>
@@ -71,10 +74,22 @@ public sealed class CompositeScope<TLeft, TRight> :
     return Left.IsSatisfiedBy(Other.Left) && Right.IsSatisfiedBy(Other.Right);
   }
 
+  /// <inheritdoc />
+  public override JsonElement GetMemento()
+  {
+    var Structure = new Structure()
+    {
+      Left = Left.GetMemento(),
+      Right = Right.GetMemento()
+    };
+    return JsonSerializer.SerializeToDocument(Structure, SerializationOptions.JsonOptions).RootElement;
+  }
+
   /// <summary>
   ///   The definition of the 2-dimensional pace in which <see cref="CompositeScope{TLeft,TRight}" /> lives.
   /// </summary>
-  public sealed class Space : DistinctSpace, ScopeSpace<CompositeScope<TLeft, TRight>>
+  public sealed class Space
+    : DistinctSpace, ScopeSpace<CompositeScope<TLeft, TRight>>
   {
     readonly ScopeSpace<TLeft> LeftDimension;
     readonly ScopeSpace<TRight> RightDimension;
@@ -114,6 +129,14 @@ public sealed class CompositeScope<TLeft, TRight> :
       return new(this, LeftDimension.Intersection(L.Left, R.Left), RightDimension.Intersection(L.Right, R.Right));
     }
 
+    /// <inheritdoc />
+    public override CompositeScope<TLeft, TRight> FromMemento(JsonElement Memento)
+    {
+      var Structure = JsonSerializer.Deserialize<Structure>(Memento.GetRawText(), SerializationOptions.JsonOptions)!;
+
+      return new(this, LeftDimension.FromMemento(Structure.Left), RightDimension.FromMemento(Structure.Right));
+    }
+
     /// <summary>
     ///   Combine two scopes into a tuple.
     /// </summary>
@@ -125,4 +148,24 @@ public sealed class CompositeScope<TLeft, TRight> :
       return new(this, Left, Right);
     }
   }
+
+  /// <inheritdoc />
+  public override string ToString()
+  {
+    return $"<{Left}, {Right}>";
+  }
+
+  class Structure
+  {
+    public required JsonElement Left { get; set; }
+    public required JsonElement Right { get; set; }
+  }
+}
+
+static class SerializationOptions
+{
+  public static JsonSerializerOptions JsonOptions { get; } = new()
+  {
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+  };
 }

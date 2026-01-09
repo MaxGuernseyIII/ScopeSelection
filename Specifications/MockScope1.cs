@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace Specifications;
 
 class MockScope1(
@@ -33,6 +35,11 @@ class MockScope1(
   public bool IsSatisfiedBy(MockScope1 Other)
   {
     return Included.Contains(Other);
+  }
+
+  public JsonElement GetMemento()
+  {
+    throw new NotImplementedException();
   }
 
   public class Space : ScopeSpace<MockScope1>
@@ -50,6 +57,11 @@ class MockScope1(
     public MockScope1 Intersection(MockScope1 L, MockScope1 R)
     {
       return L.Anded.Single(O => O.Other == R).Result;
+    }
+
+    public MockScope1 FromMemento(JsonElement Memento)
+    {
+      throw new NotImplementedException();
     }
   }
 }

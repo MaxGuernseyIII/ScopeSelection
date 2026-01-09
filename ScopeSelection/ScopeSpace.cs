@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Text.Json;
+
 namespace ScopeSelection;
 
 /// <summary>
@@ -54,4 +56,11 @@ public interface ScopeSpace<ScopeImplementation>
   /// <param name="R">A <see cref="Scope{Implementation}"/> to merge.</param>
   /// <returns>The requested <see cref="Scope{Implementation}"/>.</returns>
   public ScopeImplementation Intersection(ScopeImplementation L, ScopeImplementation R);
+
+  /// <summary>
+  /// Reconstitute a <see cref="Scope{Implementation}"/> from a memento.
+  /// </summary>
+  /// <param name="Memento">The definition of the <see cref="Scope{Implementation}"/> to reconstitute.</param>
+  /// <returns>The requested object.</returns>
+  ScopeImplementation FromMemento(JsonElement Memento);
 }

@@ -240,97 +240,6 @@ public class SupplyAndDemandScopeBehaviors
   }
 
   [TestMethod]
-  public void DemandProducesSameMementoAsDemand()
-  {
-    RoundTripEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-
-      return (Space.Demand(Token), Space.Demand(Token));
-    });
-  }
-
-  [TestMethod]
-  public void SupplyProducesSameMementoAsSupply()
-  {
-    RoundTripEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Supply(Token), Space.Supply(Token));
-    });
-  }
-
-  [TestMethod]
-  public void ForProducesSameMementoAsFor()
-  {
-    RoundTripEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.For(Token), Space.For(Token));
-    });
-  }
-
-  [TestMethod]
-  public void DemandProducesDifferentMementoFromSupply()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Demand(Token), Space.Supply(Token));
-    });
-  }
-
-  [TestMethod]
-  public void DemandProducesDifferentMementoFromFor()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Demand(Token), Space.For(Token));
-    });
-  }
-
-  [TestMethod]
-  public void DemandDifferentForDifferentTokens()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Demand(Token), Space.Demand(Any.String()));
-    });
-  }
-
-  [TestMethod]
-  public void SupplyProducesDifferentMementoFromFor()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Supply(Token), Space.For(Token));
-    });
-  }
-
-  [TestMethod]
-  public void SupplyDifferentForDifferentTokens()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.Supply(Token), Space.Supply(Any.String()));
-    });
-  }
-
-  [TestMethod]
-  public void ForDifferentForDifferentTokens()
-  {
-    RoundTripNonEquivalentScopesScenario(Space =>
-    {
-      var Token = Any.String();
-      return (Space.For(Token), Space.For(Any.String()));
-    });
-  }
-
-  [TestMethod]
   public void AnyRoundTrip()
   {
     var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
@@ -409,28 +318,5 @@ public class SupplyAndDemandScopeBehaviors
     {
       return [..DistinctScopes.SelectMany(L => DistinctScopes.Where(R => R != L).Select(R => (L, R)))];
     }
-  }
-
-  static void RoundTripNonEquivalentScopesScenario(
-    Func<SupplyAndDemandScope<string>.Space, (SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)>
-      Operation)
-  {
-
-    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
-    var Token = Any.String();
-    var (L, R) = Operation(ScopeSpace);
-
-    L.GetMemento().GetRawText().ShouldNotBe(R.GetMemento().GetRawText());
-  }
-
-  static void RoundTripEquivalentScopesScenario(
-    Func<SupplyAndDemandScope<string>.Space, (SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)>
-      Operation)
-  {
-
-    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
-    var (L, R) = Operation(ScopeSpace);
-
-    L.GetMemento().GetRawText().ShouldBe(R.GetMemento().GetRawText());
   }
 }

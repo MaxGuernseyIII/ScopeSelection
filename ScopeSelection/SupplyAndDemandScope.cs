@@ -282,7 +282,7 @@ public sealed class SupplyAndDemandScope<T>
         { Intersection: { } I } => $"({I.L}) & ({I.R})",
         { SupplyTokens: null, DemandedTokens: { } Demands } => $"demand({string.Join(", ", Demands.Select(D => D.GetRawText()))})",
         { SupplyTokens: { } Supplies, DemandedTokens: null } => $"supply({string.Join(", ", Supplies.Select(D => D.GetRawText()))})",
-        { ForToken: { } F } => $"{F.GetRawText()}",
+        { ForToken: { } F } => $"for({F.GetRawText()})",
         _ => "unspecified"
       };
     }

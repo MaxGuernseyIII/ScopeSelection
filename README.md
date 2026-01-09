@@ -170,3 +170,19 @@ A composite scope space is multi-dimensional.
 ```
 
 It does not matter the two underlying dimensions are. You can even have two dimensions from the exact same type of space.
+
+## Distinct Scope Spaces
+
+Both the composite and the supply and demand scope spaces are distinct. That means that all scopes must come from the same origin space to be unioned, intersected, and compared.
+
+Scopes from different spaces that have relational operations run on them will generate `InvalidOperationExceptions`. This mirrors at runtime the behavior you alreay get from the compiler when dealing with scopes of different type.
+
+## The Null Scope Space
+
+There is one more built-in type of scope: the null scope space. This models having no scope partitioning at all.
+
+Every scope in this space is always satisfied by every other object in the same space and the spaces are not considered distinct.
+
+## Contributing
+
+Feel free to reach out to me on GitHub or via LinkedIn.

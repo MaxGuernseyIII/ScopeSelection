@@ -28,6 +28,17 @@ public class SupplyAndDemandScopeBehaviors
   static readonly SupplyAndDemandScope<string>.Space StringTokenSpace = ScopeSpaces.SupplyAndDemand<string>();
   SupplyAndDemandScope<MockToken>.Space ScopeSpace = null!;
 
+  public static IReadOnlyList<SupplyAndDemandScope<string>> DistinctScopes { get; } = MakeDistinctScopes();
+
+  public static IReadOnlyList<(SupplyAndDemandScope<string>, SupplyAndDemandScope<string>)> EquivalentPairs { get; } =
+    [..MakeDistinctScopes().Zip(MakeDistinctScopes())];
+
+  public static IReadOnlyList<(SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)> NonEquivalentPairs
+  {
+    get;
+  }
+    = [..DistinctScopes.SelectMany(L => DistinctScopes.Where(R => R != L).Select(R => (L, R)))];
+
   [TestInitialize]
   public void Setup()
   {
@@ -270,11 +281,11 @@ public class SupplyAndDemandScopeBehaviors
     RoundTrippedMemento.GetRawText().ShouldBe(OriginalMemento.GetRawText());
   }
 
-  [DynamicData(nameof(DistinctScopes))]
+  [DynamicData(nameof(EquivalentPairs))]
   [TestMethod]
-  public void SelfEquivalence(SupplyAndDemandScope<string> Scope)
+  public void SelfEquivalence(SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)
   {
-    Scope.GetMemento().GetRawText().ShouldBe(Scope.GetMemento().GetRawText());
+    L.GetMemento().GetRawText().ShouldBe(R.GetMemento().GetRawText());
   }
 
   [DynamicData(nameof(NonEquivalentPairs))]
@@ -283,8 +294,6 @@ public class SupplyAndDemandScopeBehaviors
   {
     L.GetMemento().GetRawText().ShouldNotBe(R.GetMemento().GetRawText());
   }
-
-  public static IReadOnlyList<SupplyAndDemandScope<string>> DistinctScopes { get; } = MakeDistinctScopes();
 
   static IReadOnlyList<SupplyAndDemandScope<string>> MakeDistinctScopes()
   {
@@ -309,13 +318,5 @@ public class SupplyAndDemandScopeBehaviors
       S.Intersection(S.Supply(T2), S.For(T1)),
       S.Intersection(S.For(T2), S.Demand(T1))
     ];
-  }
-
-  public static IReadOnlyList<(SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)> NonEquivalentPairs
-  {
-    get
-    {
-      return [..DistinctScopes.SelectMany(L => DistinctScopes.Where(R => R != L).Select(R => (L, R)))];
-    }
   }
 }

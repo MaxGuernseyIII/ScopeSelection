@@ -292,6 +292,26 @@ public class SupplyAndDemandScopeBehaviors
     RoundTripNonEquivalentScopesScenario((Space, Token) => (Space.For(Token), Space.For(Any.String())));
   }
 
+  [TestMethod]
+  public void AnyRoundTrip()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+
+    var Memento = ScopeSpace.Any.GetMemento();
+
+    ScopeSpace.FromMemento(Memento).ShouldBeSameAs(ScopeSpace.Any);
+  }
+
+  [TestMethod]
+  public void UnspecifiedRoundTrip()
+  {
+    var ScopeSpace = ScopeSpaces.SupplyAndDemand<string>();
+
+    var Memento = ScopeSpace.Unspecified.GetMemento();
+
+    ScopeSpace.FromMemento(Memento).ShouldBeSameAs(ScopeSpace.Unspecified);
+  }
+
   static void RoundTripNonEquivalentScopesScenario(
     Func<SupplyAndDemandScope<string>.Space, string, (SupplyAndDemandScope<string> L, SupplyAndDemandScope<string> R)>
       Operation)

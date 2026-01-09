@@ -96,7 +96,7 @@ public sealed class SupplyAndDemandScope<T>
     public Space()
     {
       Unspecified = new(this, Always, Never, new());
-      Any = new(this, Always, Always, new());
+      Any = new(this, Always, Always, new() { IsAny = true });
     }
 
     /// <inheritdoc />
@@ -212,10 +212,22 @@ public sealed class SupplyAndDemandScope<T>
     {
       return Supplied => Supplied(Required);
     }
+
+    /// <summary>
+    /// Reconstitute a <see cref="Scope{Implementation}"/> from a memento.
+    /// </summary>
+    /// <param name="Memento">The definition of the <see cref="Scope{Implementation}"/> to reconstitute.</param>
+    /// <returns>The requested object.</returns>
+    public SupplyAndDemandScope<T> FromMemento(JsonElement Memento)
+    {
+      var Structure = JsonSerializer.Deserialize<MementoStructure>(Memento.GetRawText())!;
+      return Structure.IsAny ? Any : Unspecified;
+    }
   }
 
   class MementoStructure
   {
+    public bool IsAny { get; set; }
     public JsonElement[]? DemandedTokens { get; set; }
     public JsonElement[]? SupplyTokens { get; set; }
   }

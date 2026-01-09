@@ -190,6 +190,7 @@ public class DistinctSpaceScopeBehaviors
           new(Space2));
     }).Message.ShouldBe("Cannot compare scopes from different spaces.");
   }
+
   [TestMethod]
   public void CannotUnionFromDifferentSpaces()
   {
@@ -210,6 +211,28 @@ public class DistinctSpaceScopeBehaviors
     {
       Space2.Union(new(Space1), new(Space2));
     }).Message.ShouldBe("Cannot union scopes from different spaces.");
+  }
+
+  [TestMethod]
+  public void CannotIntersectFromDifferentSpaces()
+  {
+    var Space1 = new MockDistinctSpaceScope.Space();
+    var Space2 = new MockDistinctSpaceScope.Space();
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Intersection(new(Space1), new(Space1));
+    }).Message.ShouldBe("Cannot intersect scopes from different spaces.");
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Intersection(new(Space2), new(Space1));
+    }).Message.ShouldBe("Cannot intersect scopes from different spaces.");
+
+    Assert.Throws<InvalidOperationException>(() =>
+    {
+      Space2.Intersection(new(Space1), new(Space2));
+    }).Message.ShouldBe("Cannot intersect scopes from different spaces.");
   }
 
   [TestMethod]

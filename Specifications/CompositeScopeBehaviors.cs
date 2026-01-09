@@ -202,8 +202,6 @@ public class CompositeScopeBehaviors
     ];
   }
 
-
-
   public static IReadOnlyList<SerializationTestScope> DistinctScopes { get; } = MakeDistinctScopes();
 
   public static IReadOnlyList<(SerializationTestScope, SerializationTestScope)> EquivalentPairs { get; } =
